@@ -1,0 +1,75 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ParkPass Tracker</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 1rem; background: #f4f4f4; }
+    h1 { text-align: center; }
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; max-width: 400px; margin: 1rem auto; }
+    .day { padding: 10px; background: #fff; text-align: center; cursor: pointer; border-radius: 5px; }
+    .day.visited { background: #4caf50; color: white; }
+    .dashboard { max-width: 400px; margin: 1rem auto; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <h1>ParkPass Tracker</h1>
+  <div class="dashboard">
+    <p><strong>Total Visits:</strong> <span id="visit-count">0</span></p>
+    <p><strong>Value Used:</strong> $<span id="value-used">0.00</span></p>
+    <p><strong>Visits to Break Even:</strong> <span id="visits-left">21</span></p>
+  </div>  <div class="calendar" id="calendar"></div>  <script>
+    const PASS_COST = 42;
+    const PER_VISIT_VALUE = 2;
+    const BREAK_EVEN_VISITS = PASS_COST / PER_VISIT_VALUE;
+
+    const calendarEl = document.getElementById('calendar');
+    const visitCountEl = document.getElementById('visit-count');
+    const valueUsedEl = document.getElementById('value-used');
+    const visitsLeftEl = document.getElementById('visits-left');
+
+    let visits = JSON.parse(localStorage.getItem('visits') || '[]');
+
+    function updateDashboard() {
+      const totalVisits = visits.length;
+      visitCountEl.textContent = totalVisits;
+      valueUsedEl.textContent = (totalVisits * PER_VISIT_VALUE).toFixed(2);
+      visitsLeftEl.textContent = Math.max(0, Math.ceil(BREAK_EVEN_VISITS - totalVisits));
+    }
+
+    function buildCalendar() {
+      calendarEl.innerHTML = '';
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${(month+1).toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}`;
+        const div = document.createElement('div');
+        div.className = 'day';
+        div.textContent = day;
+
+        if (visits.includes(dateStr)) {
+          div.classList.add('visited');
+        }
+
+        div.addEventListener('click', () => {
+          if (visits.includes(dateStr)) {
+            visits = visits.filter(d => d !== dateStr);
+          } else {
+            visits.push(dateStr);
+          }
+          localStorage.setItem('visits', JSON.stringify(visits));
+          buildCalendar();
+          updateDashboard();
+        });
+
+        calendarEl.appendChild(div);
+      }
+    }
+
+    buildCalendar();
+    updateDashboard();
+  </script></body>
+</html>
